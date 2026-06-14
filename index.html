@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ระบบลงทะเบียนสตาฟ</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;600;700&display=swap" rel="stylesheet">
+    <style> body { font-family: 'Sarabun', sans-serif; } </style>
+</head>
+<body class="bg-gray-100 min-h-screen flex items-center justify-center p-4">
+
+    <div class="bg-white p-6 rounded-2xl shadow-xl w-full max-w-sm border border-gray-100">
+        <h1 class="text-2xl font-bold text-center text-emerald-600 mb-6">📌 เช็คชื่อสตาฟ</h1>
+
+        <form id="checkInForm" class="space-y-4">
+            <div>
+                <label class="block text-sm font-semibold text-gray-700 mb-2">📅 รอบวันที่ (ระบบล็อกอัตโนมัติ):</label>
+                <select id="daySelect" class="w-full p-3 bg-gray-200 border border-gray-300 rounded-xl text-gray-500 focus:outline-none cursor-not-allowed">
+                    <option value="1">วันที่ 1 (12/06)</option>
+                    <option value="2">วันที่ 2 (13/06)</option>
+                    <option value="3">วันที่ 3 (14/06)</option>
+                    <option value="4">วันที่ 4 (15/06)</option>
+                    <option value="5">วันที่ 5 (16/06)</option>
+                    <option value="6">วันที่ 6 (19/06)</option>
+                </select>
+            </div>
+
+            <div>
+                <label class="block text-sm font-semibold text-gray-700 mb-2">🆔 รหัสนักศึกษา:</label>
+                <input type="number" id="studentId" placeholder="กรอกรหัส 10 หลัก..." required
+                    class="w-full p-3 bg-gray-50 border border-gray-300 rounded-xl text-gray-800 focus:ring-2 focus:ring-emerald-500 outline-none disabled:bg-gray-200">
+            </div>
+
+            <div>
+                <label class="block text-sm font-semibold text-gray-700 mb-2">🔐 รหัส OTP (ดูที่หน้าโต๊ะลงทะเบียน):</label>
+                <input type="number" id="otpInput" placeholder="กรอกรหัส 4 หลัก..." required
+                    class="w-full p-3 bg-gray-50 border border-gray-300 rounded-xl text-gray-800 focus:ring-2 focus:ring-emerald-500 outline-none font-mono tracking-widest text-lg text-center disabled:bg-gray-200">
+            </div>
+
+            <button type="submit" id="submitBtn" 
+                class="w-full p-3 bg-emerald-500 hover:bg-emerald-600 text-white font-bold rounded-xl transition shadow-md disabled:bg-gray-400 mt-2">
+                ยืนยันลงชื่อเข้างาน
+            </button>
+        </form>
+
+        <div id="statusBox" class="mt-4 p-3 rounded-xl text-sm text-center font-bold hidden"></div>
+    </div>
+
+    <script>
+        // ⚠️ วางลิงก์ WEB APP ของคุณตรงนี้ ⚠️
+        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwtQ_GNUK1ZdIx9TUvOaMoAd3dfzIz-JIpARu9l8yDdefXU9kehWbT_tlTpCQsLIk2Z/exec"; 
+
+        const form = document.getElementById('checkInForm');
+        const daySelect = document.getElementById('daySelect');
+        const studentIdInput = document.getElementById('studentId');
+        const otpInput = document.getElementById('otpInput');
+        const submitBtn = document.getElementById('submitBtn');
+        const statusBox = document.getElementById('statusBox');
+
+        function autoLockDay() {
+            const today = new Date();
+            const month = today.getMonth(); // 5 = มิถุนายน
+            const date = today.getDate();
+            let currentEventDay = "";
+
+            if (month === 5) { 
+                if (date === 12) currentEventDay = "1";
+                else if (date === 13) currentEventDay = "2";
+                else if (date === 14) currentEventDay = "3";
+                else if (date === 15) currentEventDay = "4";
+                else if (date === 16) currentEventDay = "5";
+                else if (date === 19) currentEventDay = "6";
+            }
+
+            if (currentEventDay !== "") {
+                daySelect.value = currentEventDay;
+                daySelect.disabled = true; 
+                return true;
+            } else {
+                studentIdInput.disabled = true;
+                otpInput.disabled = true;
+                submitBtn.disabled = true;
+                daySelect.disabled = true;
+                daySelect.value = ""; 
+                showStatus('❌ ปิดระบบ: วันนี้ไม่มีรอบการเช็คชื่อตามกำหนดการ', false);
+                return false;
+            }
+        }
+
+        // ระบบล็อก 1 เครื่อง ต่อ 1 วัน
+        function checkDeviceLock() {
+            const isEventDay = autoLockDay();
+            if (!isEventDay) return; 
+
+            const day = daySelect.value;
+            if (localStorage.getItem('checkin_day_' + day)) {
+                studentIdInput.disabled = true;
+                otpInput.disabled = true;
+                submitBtn.disabled = true;
+                showStatus('⚠️ อุปกรณ์นี้ใช้เช็คชื่อรอบวันนี้ไปแล้ว', false);
+            } else {
+                studentIdInput.disabled = false;
+                otpInput.disabled = false;
+                submitBtn.disabled = false;
+                statusBox.classList.add('hidden');
+            }
+        }
+
+        checkDeviceLock();
+
+        function showStatus(msg, isSuccess) {
+            statusBox.classList.remove('hidden', 'bg-emerald-100', 'text-emerald-700', 'bg-red-100', 'text-red-700');
+            statusBox.classList.add(isSuccess ? 'bg-emerald-100' : 'bg-red-100', isSuccess ? 'text-emerald-700' : 'text-red-700');
+            statusBox.innerText = msg;
+        }
+
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            daySelect.disabled = false; 
+            const day = daySelect.value;
+            const studentId = studentIdInput.value.trim();
+            const otp = otpInput.value.trim();
+            daySelect.disabled = true; 
+
+            if (!studentId || !otp) {
+                showStatus('❌ กรุณากรอกรหัสและ OTP ให้ครบถ้วน', false);
+                return;
+            }
+
+            submitBtn.disabled = true;
+            submitBtn.innerText = "กำลังตรวจรหัส OTP...";
+            studentIdInput.disabled = true;
+            otpInput.disabled = true;
+            statusBox.classList.add('hidden');
+
+            fetch(SCRIPT_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                body: JSON.stringify({ day: day, studentId: studentId, otp: otp })
+            })
+            .then(response => response.json())
+            .then(data => {
+                showStatus(data.msg, data.success);
+                if (data.success) {
+                    // ล็อกเครื่องทันทีที่เช็คชื่อผ่าน
+                    localStorage.setItem('checkin_day_' + day, studentId);
+                    submitBtn.innerText = "เช็คชื่อสำเร็จแล้ว";
+                } else {
+                    submitBtn.disabled = false;
+                    studentIdInput.disabled = false;
+                    otpInput.disabled = false;
+                    otpInput.value = ''; // ล้าง OTP ให้กรอกใหม่
+                    submitBtn.innerText = "ยืนยันลงชื่อเข้างาน";
+                }
+            })
+            .catch(error => {
+                showStatus('❌ เกิดข้อผิดพลาดในการเชื่อมต่อ กรุณาลองใหม่', false);
+                submitBtn.disabled = false;
+                studentIdInput.disabled = false;
+                otpInput.disabled = false;
+                submitBtn.innerText = "ยืนยันลงชื่อเข้างาน";
+            });
+        });
+    </script>
+</body>
+</html>
