@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>รหัสลงทะเบียนสตาฟ</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;700;800&display=swap" rel="stylesheet">
+    <style> body { font-family: 'Sarabun', sans-serif; background-color: #0f172a; color: white; } </style>
+</head>
+<body class="min-h-screen flex flex-col items-center justify-center p-4 relative">
+
+    <div class="text-center">
+        <h1 class="text-3xl md:text-5xl text-emerald-400 font-bold mb-4">📌 รหัส OTP เช็คชื่อ</h1>
+        <p class="text-gray-400 text-lg md:text-2xl mb-8">กรุณากรอกรหัส 4 หลักนี้ ลงในมือถือของคุณ</p>
+        
+        <div class="bg-gray-800 border-4 border-emerald-500 rounded-3xl p-10 mb-8 inline-block shadow-[0_0_50px_rgba(16,185,129,0.3)]">
+            <span id="otpCode" class="text-7xl md:text-9xl font-extrabold tracking-[0.2em] ml-[0.2em] text-white font-mono">----</span>
+        </div>
+
+        <div class="w-full max-w-md mx-auto bg-gray-700 rounded-full h-4 mb-2 overflow-hidden">
+            <div id="progressBar" class="bg-emerald-500 h-4 rounded-full transition-all duration-100 ease-linear" style="width: 100%"></div>
+        </div>
+        <p class="text-gray-400">รหัสจะเปลี่ยนใน <span id="timeCount" class="font-bold text-emerald-400">15</span> วินาที</p>
+    </div>
+
+    <button onclick="document.getElementById('adminModal').classList.remove('hidden')" 
+            class="absolute bottom-4 right-4 text-gray-500 hover:text-emerald-400 text-sm transition">
+        ⚙️ จัดการข้อมูล (Admin)
+    </button>
+
+    <div id="adminModal" class="hidden fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center p-4 z-50">
+        <div class="bg-gray-800 rounded-2xl p-6 w-full max-w-sm border border-gray-600 shadow-2xl">
+            <div class="flex justify-between items-center mb-5">
+                <h2 class="text-xl font-bold text-white">🛠️ ระบบแอดมิน</h2>
+                <button onclick="document.getElementById('adminModal').classList.add('hidden')" class="text-gray-400 hover:text-red-400 text-xl font-bold">✕</button>
+            </div>
+
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-sm text-gray-300 mb-1">วันที่จัดการ:</label>
+                    <select id="adminDay" class="w-full p-2 bg-gray-700 border border-gray-600 rounded text-white focus:outline-none">
+                        <option value="1">วันที่ 1 (12/06)</option>
+                        <option value="2">วันที่ 2 (13/06)</option>
+                        <option value="3">วันที่ 3 (14/06)</option>
+                        <option value="4">วันที่ 4 (15/06)</option>
+                        <option value="5">วันที่ 5 (16/06)</option>
+                        <option value="6">วันที่ 6 (19/06)</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm text-gray-300 mb-1">รหัสนักศึกษา:</label>
+                    <input type="number" id="adminStudentId" placeholder="10 หลัก" class="w-full p-2 bg-gray-700 border border-gray-600 rounded text-white focus:outline-none">
+                </div>
+                <div>
+                    <label class="block text-sm text-gray-300 mb-1">รหัสผ่านแอดมิน:</label>
+                    <input type="password" id="adminPass" placeholder="****" class="w-full p-2 bg-gray-700 border border-gray-600 rounded text-white focus:outline-none">
+                </div>
+
+                <div id="adminStatus" class="text-sm font-bold text-center hidden p-2 rounded"></div>
+
+                <div class="flex space-x-2 pt-2">
+                    <button onclick="submitAdmin('reset')" class="flex-1 bg-red-500 hover:bg-red-600 text-white py-2 rounded font-bold transition text-sm">
+                        ล้างเช็คชื่อ
+                    </button>
+                    <button onclick="submitAdmin('force')" class="flex-1 bg-emerald-500 hover:bg-emerald-600 text-white py-2 rounded font-bold transition text-sm">
+                        เช็คชื่อแทน
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ⚠️ นำลิงก์ WEB APP ของคุณมาวางที่นี่ (ลิงก์เดียวกับหน้าเว็บสตาฟ) ⚠️
+        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwtQ_GNUK1ZdIx9TUvOaMoAd3dfzIz-JIpARu9l8yDdefXU9kehWbT_tlTpCQsLIk2Z/exec"; 
+
+        // ระบบรันตัวเลข OTP (ทำงานอัตโนมัติ)
+        function updateOTPDisplay() {
+            const now = Date.now();
+            const timeWindow = Math.floor(now / 15000); 
+            const secret = 847291; 
+            
+            let otp = Math.abs((timeWindow * secret) % 10000).toString();
+            while (otp.length < 4) otp = "0" + otp; 
+            
+            document.getElementById('otpCode').innerText = otp;
+
+            const msPassed = now % 15000;
+            const secondsLeft = Math.ceil((15000 - msPassed) / 1000);
+            const percentage = ((15000 - msPassed) / 15000) * 100;
+
+            document.getElementById('progressBar').style.width = percentage + '%';
+            document.getElementById('timeCount').innerText = secondsLeft;
+            
+            const bar = document.getElementById('progressBar');
+            if (secondsLeft <= 3) bar.classList.replace('bg-emerald-500', 'bg-red-500');
+            else bar.classList.replace('bg-red-500', 'bg-emerald-500');
+        }
+
+        setInterval(updateOTPDisplay, 50); 
+        updateOTPDisplay(); 
+
+        // ระบบส่งคำสั่ง Admin
+        function submitAdmin(manageType) {
+            const day = document.getElementById('adminDay').value;
+            const studentId = document.getElementById('adminStudentId').value.trim();
+            const adminPass = document.getElementById('adminPass').value.trim();
+            const statusBox = document.getElementById('adminStatus');
+
+            if (!studentId || !adminPass) {
+                showAdminStatus("กรุณากรอกรหัสนักศึกษาและรหัสผ่าน", false);
+                return;
+            }
+
+            statusBox.classList.remove('hidden');
+            statusBox.className = "text-sm font-bold text-center p-2 rounded bg-gray-600 text-white";
+            statusBox.innerText = "กำลังประมวลผล...";
+
+            fetch(SCRIPT_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                body: JSON.stringify({ 
+                    action: 'admin_manage', 
+                    manageType: manageType,
+                    day: day, 
+                    studentId: studentId, 
+                    adminPass: adminPass 
+                })
+            })
+            .then(response => response.json())
+            .then(data => showAdminStatus(data.msg, data.success))
+            .catch(err => showAdminStatus("❌ เชื่อมต่อล้มเหลว", false));
+        }
+
+        function showAdminStatus(msg, isSuccess) {
+            const statusBox = document.getElementById('adminStatus');
+            statusBox.className = "text-sm font-bold text-center p-2 rounded " + (isSuccess ? "bg-emerald-200 text-emerald-800" : "bg-red-200 text-red-800");
+            statusBox.innerText = msg;
+            if(isSuccess) document.getElementById('adminStudentId').value = ''; // ล้างช่องรหัสถ้าทำสำเร็จ
+        }
+    </script>
+</body>
+</html>
