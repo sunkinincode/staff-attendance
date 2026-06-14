@@ -72,13 +72,13 @@
     </div>
 
     <script>
-        // ⚠️ นำลิงก์ WEB APP ของคุณมาวางที่นี่ (ลิงก์เดียวกับหน้าเว็บสตาฟ) ⚠️
+        // ⚠️ นำลิงก์ WEB APP ของคุณมาวางที่นี่ ⚠️
         const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwtQ_GNUK1ZdIx9TUvOaMoAd3dfzIz-JIpARu9l8yDdefXU9kehWbT_tlTpCQsLIk2Z/exec"; 
 
-        // ระบบรันตัวเลข OTP (ทำงานอัตโนมัติ)
         function updateOTPDisplay() {
             const now = Date.now();
-            const timeWindow = Math.floor(now / 15000); 
+            // 🚨 แก้เป็น 45000 (45 วินาที)
+            const timeWindow = Math.floor(now / 45000); 
             const secret = 847291; 
             
             let otp = Math.abs((timeWindow * secret) % 10000).toString();
@@ -86,15 +86,17 @@
             
             document.getElementById('otpCode').innerText = otp;
 
-            const msPassed = now % 15000;
-            const secondsLeft = Math.ceil((15000 - msPassed) / 1000);
-            const percentage = ((15000 - msPassed) / 15000) * 100;
+            // 🚨 แก้เป็น 45000 สำหรับการคำนวณหลอดเวลา
+            const msPassed = now % 45000;
+            const secondsLeft = Math.ceil((45000 - msPassed) / 1000);
+            const percentage = ((45000 - msPassed) / 45000) * 100;
 
             document.getElementById('progressBar').style.width = percentage + '%';
             document.getElementById('timeCount').innerText = secondsLeft;
             
             const bar = document.getElementById('progressBar');
-            if (secondsLeft <= 3) bar.classList.replace('bg-emerald-500', 'bg-red-500');
+            // แจ้งเตือนหลอดสีแดงเมื่อเหลือ 5 วินาทีสุดท้าย
+            if (secondsLeft <= 5) bar.classList.replace('bg-emerald-500', 'bg-red-500');
             else bar.classList.replace('bg-red-500', 'bg-emerald-500');
         }
 
@@ -137,7 +139,7 @@
             const statusBox = document.getElementById('adminStatus');
             statusBox.className = "text-sm font-bold text-center p-2 rounded " + (isSuccess ? "bg-emerald-200 text-emerald-800" : "bg-red-200 text-red-800");
             statusBox.innerText = msg;
-            if(isSuccess) document.getElementById('adminStudentId').value = ''; // ล้างช่องรหัสถ้าทำสำเร็จ
+            if(isSuccess) document.getElementById('adminStudentId').value = ''; 
         }
     </script>
 </body>
